@@ -14,6 +14,7 @@ import {
 import axios, { AxiosError } from 'axios';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { BASE_URL } from '../config/api';
 
 export default function NewPasswordScreen() {
   const { name, email } = useLocalSearchParams<{
@@ -77,7 +78,7 @@ export default function NewPasswordScreen() {
     setLoading(true);
 
     try {
-        await axios.post('http://localhost:3000/register', {
+        await axios.post(`${BASE_URL}/register`, {
             name,
             email,
             password

@@ -2,6 +2,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { Text, View, FlatList, TouchableOpacity } from 'react-native';
+import { BASE_URL } from '../config/api';
 
 type SubMateri = {
   id: string;
@@ -14,7 +15,7 @@ export default function MateriPage() {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:3000/sub-materi`, {
+      .get(`${BASE_URL}/sub-materi`, {
         params: { materiId }
       })
       .then(res => setSubMateri(res.data));

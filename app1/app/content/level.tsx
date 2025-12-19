@@ -2,6 +2,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { Text, View, TouchableOpacity, FlatList } from 'react-native';
+import { BASE_URL } from '../config/api';
 
 type Level = {
   id: string;
@@ -16,7 +17,7 @@ export default function LevelPage() {
     const fetchLevels = async () => {
       try {
         const res = await axios.get(
-          'http://localhost:3000/tingkat-pendidikan'
+          `${BASE_URL}/tingkat-pendidikan`
         );
         setLevels(res.data);
       } catch (err) {

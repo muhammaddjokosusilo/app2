@@ -2,13 +2,16 @@ const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 
+require('dotenv').config();
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-const supabaseUrl = 'https://psxikwpuqcvqipvuzpnc.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzeGlrd3B1cWN2cWlwdnV6cG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5Nzg2MTYsImV4cCI6MjA4MTU1NDYxNn0.JYXJHnFEDPi_e8CGHZoo5_H2DC5nX-hMX6ISLdjNRtM';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Endpoint untuk check email
 app.post('/check-email', async (req, res) => {
@@ -103,9 +106,9 @@ app.post('/login', async (req, res) => {
   }
 
   // 2. Ambil data tambahan (sekolah) dari tabel profiles
-  const { data: profile, error: profileError } = await supabase
+  const { data: {profile, picture}, error: profileError } = await supabase
     .from('profiles')
-    .select('sekolah, name')
+    .select('sekolah, name, picture')
     .eq('id', authData.user.id)
     .single();
 
@@ -116,7 +119,8 @@ app.post('/login', async (req, res) => {
         ...authData.user,
         // Gabungkan data dari tabel profiles ke objek user
         sekolah: profile?.sekolah || 'Belum diisi',
-        display_name: profile?.name || authData.user.user_metadata?.name
+        picture: picture?.picture || null,
+        name: profile?.name || authData.user.user_metadata?.name
       }
     }
   });
@@ -219,6 +223,10 @@ app.get('/tingkat-pendidikan', async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+// app.listen(3000, () => {
+//   console.log('Server running on http://localhost:3000');
+// });
+
+app.listen(3000, '0.0.0.0', () => {
+  console.log('Server running on port 3000');
 });

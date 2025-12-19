@@ -4,7 +4,11 @@ import { AuthProvider } from "./context/authContext";  // Baru: Import AuthProvi
 export default function RootLayout() {
   return (
     <AuthProvider> 
-      <Stack />
+      <Stack 
+        screenOptions={{
+          headerShown: false, // ⬅️ MATIKAN NAVBAR TOP
+        }}
+      />
     </AuthProvider>
   );
 }

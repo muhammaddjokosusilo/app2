@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
+import { BASE_URL } from '../config/api';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -46,7 +47,7 @@ export default function RegisterScreen() {
     try {
       // Cek apakah email sudah terdaftar
       // Catatan: Endpoint ini perlu dibuat di backend
-      const response = await axios.post('http://localhost:3000/check-email', { email });
+      const response = await axios.post(`${BASE_URL}/check-email`, { email });
       
       if (response.data.exists) {
         Alert.alert(

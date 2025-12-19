@@ -1,26 +1,38 @@
 import React, { useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
-  TextInput,
-  Button,
-  Text,
-  Alert,
   StyleSheet,
+  Image,
+  TextInput,
+  Text,
+  Dimensions,
   TouchableOpacity,
-  Platform
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator
 } from 'react-native';
-import axios, { AxiosError } from 'axios';
 import { useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from './context/authContext';
+import axios, { AxiosError } from 'axios';
+import { BASE_URL } from './config/api';
+
+const { width } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth(); // ✅ DI DALAM COMPONENT
-
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -28,14 +40,13 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
-
     try {
-      const res = await axios.post('http://localhost:3000/login', {
+      // Gunakan endpoint yang benar (sesuaikan dengan backend)
+      const res = await axios.post(`${BASE_URL}/login`, {
         email,
-        password
+        password,
       });
 
-      // ✅ PERBAIKAN: Pastikan struktur response sesuai
       const access_token = res.data.data?.session?.access_token;
       const user = res.data.data?.user;
 
@@ -43,116 +54,244 @@ export default function LoginScreen() {
         throw new Error('Invalid response from server');
       }
 
-      // AMBIL DATA DARI RESPONSE YANG SUDAH KITA GABUNGKAN DI BACKEND
-      const formattedUser = {
-        id: user.id,
-        email: user.email,
-        name: user.display_name || 'User', // Ambil dari display_name bentukan backend
-        sekolah: user.sekolah || 'Tidak Diketahui', // SEKARANG INI AKAN TERISI
-      };
-
-      await login(access_token, formattedUser);
-
-      // ✅ PINDAH KE HOME
-      router.replace('/auth/homePage'); // Gunakan replace bukan push
-
+      await login(access_token, user);
+      router.replace('./auth/homePage');
     } catch (err) {
       console.error('Login error:', err);
-      
       let errorMessage = 'Terjadi kesalahan. Coba lagi.';
       
       if (axios.isAxiosError(err)) {
-        // Handle Axios error
         const axiosError = err as AxiosError<{ error?: string }>;
-        errorMessage = axiosError.response?.data?.error || 
-                      axiosError.message || 
-                      'Network error';
-        
-        // Log detail untuk debugging
-        console.log('Response status:', axiosError.response?.status);
-        console.log('Response data:', axiosError.response?.data);
+        errorMessage = axiosError.response?.data?.error || axiosError.message || 'Network error';
       } else if (err instanceof Error) {
         errorMessage = err.message;
       }
 
-      if (Platform.OS === 'web') {
-        alert(`Login Failed: ${errorMessage}`);
-      } else {
-        Alert.alert('Login Failed', errorMessage);
-      }
+      Alert.alert('Login Failed', errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.ConMain}>
+            {/* Header with Logo */}
+            <View style={styles.header}>
+              <Image
+                source={require('@/assets/images/logo.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-      />
+            {/* Login Form Card */}
+            <View style={styles.cardWrapper}>
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Login</Text>
+                
+                {/* Input Fields */}
+                <View style={styles.inputContainer}>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Email"
+                      placeholderTextColor="#9E9E9E"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      editable={!loading}
+                    />
+                  </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Password"
+                      placeholderTextColor="#9E9E9E"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                      editable={!loading}
+                    />
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      style={styles.visibilityBtn}
+                      onPress={toggleShowPassword}
+                    >
+                      <MaterialCommunityIcons
+                        name={showPassword ? 'eye-off' : 'eye'}
+                        size={24}
+                        color="#aaa"
+                      />
+                    </TouchableOpacity>
+                  </View>
 
-      <Button
-        title={loading ? 'Logging in...' : 'Login'}
-        onPress={handleLogin}
-        disabled={loading}
-      />
+                  <TouchableOpacity
+                    style={styles.forgotPasswordLink}
+                    onPress={() => router.push('./auth/forgot')}
+                    disabled={loading}
+                  >
+                    <Text style={styles.forgotPasswordText}>
+                      Forgot Password?
+                    </Text>
+                  </TouchableOpacity>
+                </View>
 
-      <TouchableOpacity
-        onPress={() => router.push('/auth/registerPage')}
-        style={styles.link}
-      >
-        <Text style={styles.linkText}>
-          Don't have an account? Register here
-        </Text>
-      </TouchableOpacity>
-    </View>
+                {/* Login Button */}
+                <TouchableOpacity
+                  style={[styles.loginButton, loading && styles.buttonDisabled]}
+                  onPress={handleLogin}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.loginButtonText}>LOGIN</Text>
+                  )}
+                </TouchableOpacity>
+
+                {/* Register Section */}
+                <View style={styles.registerContainer}>
+                  <Text style={styles.registerText}>Don't have an account?</Text>
+                  <TouchableOpacity
+                    onPress={() => router.push('/auth/registerPage')}
+                    disabled={loading}
+                  >
+                    <Text style={styles.registerLink}>REGISTER</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
+const CARD_WIDTH = Math.min(311, width - 40);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5'
+    backgroundColor: '#27AE60',
   },
-  title: {
-    fontSize: 28,
+  safeArea: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ConMain: {
+    width: 344,
+    height: 544,
+  },
+  header: {
+    height: 150,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: 12,
+  },
+  logo: {
+    width: 311,
+    height: '100%',
+  },
+
+  cardWrapper: {
+    alignItems: 'center',
+    marginTop: 0,
+  },
+  card: {
+    width: CARD_WIDTH,
+    minHeight: 411,
+    backgroundColor: '#fff',
+    borderRadius: 40,
+    paddingVertical: 28,
+    paddingHorizontal: 0,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#333'
+    color: '#333',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    width: 245,
+    marginTop: 18,
+    gap: 12,
+  },
+  inputWrapper: {
+    position: 'relative',
   },
   input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    backgroundColor: 'white'
+    backgroundColor: '#D9D9D9',
+    height: 44,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    color: '#747474',
+    fontSize: 16,
   },
-  link: {
-    marginTop: 20,
-    alignItems: 'center'
+  visibilityBtn: {
+    position: 'absolute',
+    right: 10,
+    top: '25%',
+    zIndex: 1,
   },
-  linkText: {
-    color: '#007AFF',
-    fontSize: 16
-  }
+  forgotPasswordLink: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+  },
+  forgotPasswordText: {
+    color: '#27AE60',
+    fontSize: 14,
+  },
+  loginButton: {
+    backgroundColor: '#27AE60',
+    borderRadius: 22,
+    paddingVertical: 14,
+    paddingHorizontal: 60,
+    marginTop: 40,
+    minWidth: 150,
+  },
+  loginButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  buttonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  
+  
+  registerContainer: {
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  registerText: {
+    color: '#666',
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  registerLink: {
+    color: '#27AE60',
+    fontWeight: '700',
+    fontSize: 14,
+  },
 });
