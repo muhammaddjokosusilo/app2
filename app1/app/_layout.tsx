@@ -1,14 +1,10 @@
-import { Stack } from "expo-router";
-import { AuthProvider } from "./context/authContext";  // Baru: Import AuthProvider
+import { Stack } from 'expo-router';
+import { AuthProvider } from './(tabs)/context/authContext';
 
 export default function RootLayout() {
   return (
-    <AuthProvider> 
-      <Stack 
-        screenOptions={{
-          headerShown: false, // ⬅️ MATIKAN NAVBAR TOP
-        }}
-      />
+    <AuthProvider>
+      <Stack screenOptions={{ headerShown: false }} />
     </AuthProvider>
   );
 }

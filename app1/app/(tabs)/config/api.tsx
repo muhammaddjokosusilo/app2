@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-const LOCAL_IP = '10.190.119.170';
+const LOCAL_IP = '192.168.100.137';
 
 export const BASE_URL = Platform.select({
   web: `http://${LOCAL_IP}:3000`,

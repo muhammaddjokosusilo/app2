@@ -38,10 +38,10 @@ app.post('/check-email', async (req, res) => {
 // Endpoint register dengan name
 app.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, sekolah, password } = req.body;
 
     // Validasi input
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !sekolah) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -69,6 +69,7 @@ app.post('/register', async (req, res) => {
           id: authData.user.id,
           email: email,
           name: name,
+          sekolah: sekolah,
           created_at: new Date()
         }
       ]);
@@ -82,7 +83,8 @@ app.post('/register', async (req, res) => {
       message: 'Registration successful! Please check your email for verification.',
       user: {
         id: authData.user.id,
-        email: authData.user.email
+        email: authData.user.email,
+        sekolah: sekolah,
       }
     });
 
@@ -106,7 +108,7 @@ app.post('/login', async (req, res) => {
   }
 
   // 2. Ambil data tambahan (sekolah) dari tabel profiles
-  const { data: {profile, picture}, error: profileError } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('sekolah, name, picture')
     .eq('id', authData.user.id)
@@ -119,7 +121,7 @@ app.post('/login', async (req, res) => {
         ...authData.user,
         // Gabungkan data dari tabel profiles ke objek user
         sekolah: profile?.sekolah || 'Belum diisi',
-        picture: picture?.picture || null,
+        picture: profile?.picture || null,
         name: profile?.name || authData.user.user_metadata?.name
       }
     }
@@ -156,6 +158,21 @@ app.get('/mata-pelajaran', async (req, res) => {
   }
 });
 
+app.get('/event', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('event')
+      .select('id, name_event, image_event');
+
+    if (error) throw error;
+
+    res.json(data); // ⬅️ KIRIM ARRAY
+  } catch (error) {
+    console.error('Error fetch event:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 app.get('/profile', async (req, res) => {
   try {
@@ -184,7 +201,15 @@ app.get('/profile', async (req, res) => {
 });
 
 app.get('/materi', async (req, res) => {
+  console.log('QUERY:', req.query);
+
   const { mapelId, levelId } = req.query;
+
+  if (!mapelId || !levelId) {
+    return res.status(400).json({
+      error: 'mapelId dan levelId wajib diisi',
+    });
+  }
 
   const { data, error } = await supabase
     .from('materi')
@@ -209,6 +234,7 @@ app.get('/sub-materi', async (req, res) => {
 });
 
 app.get('/tingkat-pendidikan', async (req, res) => {
+  console.log('QUERY:', req.query);
   try {
     const { data, error } = await supabase
       .from('tingkat_pendidikan')
