@@ -1,63 +1,12 @@
-// import { useLocalSearchParams, router } from 'expo-router';
-// import axios from 'axios';
-// import { useEffect, useState } from 'react';
-// import { Text, View, FlatList, TouchableOpacity } from 'react-native';
-// import { BASE_URL } from '../config/api';
-
-// type Materi = {
-//   id: string;
-//   judul: string;  
-// };
-
-// export default function MateriPage() {
-//   // const { mapelId, levelId } = useLocalSearchParams();
-//   const { mapelId, levelId } = useLocalSearchParams();
-//   const [materi, setMateri] = useState<Materi[]>([]);
-
-//   useEffect(() => {
-//     if (!mapelId || !levelId) return; // ⬅️ PENTING
-
-//     axios
-//       .get(`${BASE_URL}/materi`, {
-//         params: { mapelId, levelId },
-//       })
-//       .then(res => setMateri(res.data))
-//       .catch(err => console.error(err));
-
-//   }, [mapelId, levelId]); // ⬅️ PENTING
-
-
-//   return (
-//     <View>
-//       {/* {materi.map((item) => (
-//         <Text key={item.id}>{item.judul}</Text>
-//       ))} */}
-//       <FlatList
-//         data={materi}
-//         keyExtractor={(item) => item.id}
-//         renderItem={({ item }) => (
-//           <TouchableOpacity
-//             onPress={() =>
-//               router.push({
-//                 pathname: '/content/sub_materi', // ✅ BENAR
-//                 params: {
-//                   materiId: item.id,
-//                 },
-//               })
-//             }
-//           >
-//             <Text>{item.judul}</Text>
-//           </TouchableOpacity>
-//         )}
-//       />
-//     </View>
-//   );
-// }
 import { useLocalSearchParams, router } from 'expo-router';
-import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { Text, View, FlatList, TouchableOpacity } from 'react-native';
+import {Text, StyleSheet, View, TouchableOpacity} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../config/api';
+
+import axios from 'axios';
+import CardSubContent from '../../component/cardSubMateri';
 
 type Materi = {
   id: string;
@@ -65,40 +14,82 @@ type Materi = {
 };
 
 export default function MateriPage() {
-  const { mapelId, levelId } = useLocalSearchParams();
+  const { mapelId, levelId } = useLocalSearchParams<{
+    mapelId: string;
+    levelId: string;
+  }>();
+
   const [materi, setMateri] = useState<Materi[]>([]);
 
   useEffect(() => {
-    axios
-      .get(`${BASE_URL}/materi`, {
-        params: { mapelId, levelId }
-      })
-      .then(res => setMateri(res.data));
-  }, []);
+    axios.get(`${BASE_URL}/materi`, {
+      params: { mapelId, levelId }
+    }).then(res => setMateri(res.data));
+  }, [mapelId, levelId]);
 
   return (
-    <View>
-      {/* {materi.map((item) => (
-        <Text key={item.id}>{item.judul}</Text>
-      ))} */}
-      <FlatList
-        data={materi}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() =>
-              router.push({
-                pathname: '/content/sub_materi', // ✅ BENAR
-                params: {
-                  materiId: item.id,
-                },
-              })
-            }
-          >
-            <Text>{item.judul}</Text>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={22} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Materi</Text>
+          </View>
+
+          {/* Content */}
+          <View>
+            <View style={styles.cardListContainer}>
+              {materi.map(item => (
+                <View key={item.id} style={{ marginBottom: 20 }}>
+                  <CardSubContent
+                    title={item.judul}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/content/sub_materi',
+                        params: { materiId: item.id },
+                      })
+                    }
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        
+
+      </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: '#27AE60',
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    marginBottom: 30,
+    width: '100%',
+  },
+  backButton: {
+    padding: 5,
+    marginRight: 20,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  cardListContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+});

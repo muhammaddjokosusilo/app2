@@ -222,16 +222,28 @@ app.get('/materi', async (req, res) => {
 });
 
 app.get('/sub-materi', async (req, res) => {
-  const { materiId } = req.query;
+  const { materiId } = req.query; // ✅ WAJIB
+
+  if (!materiId) {
+    return res.status(400).json({ error: 'materiId wajib diisi' });
+  }
 
   const { data, error } = await supabase
-    .from('sub_materi')
-    .select('*')
+    .from('nama_sub_materi')
+    .select(`
+      id,
+      nama_subMateri,
+      video_sub_materi (
+        video_subMateri
+      )
+    `)
     .eq('materi_id', materiId);
 
   if (error) return res.status(500).json(error);
   res.json(data);
 });
+
+
 
 app.get('/tingkat-pendidikan', async (req, res) => {
   console.log('QUERY:', req.query);
@@ -252,6 +264,7 @@ app.get('/tingkat-pendidikan', async (req, res) => {
 // app.listen(3000, () => {
 //   console.log('Server running on http://localhost:3000');
 // });
+
 
 app.listen(3000, '0.0.0.0', () => {
   console.log('Server running on port 3000');

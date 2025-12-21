@@ -1,46 +1,53 @@
 import React from 'react';
 import {
-  SafeAreaView,
   View,
   StyleSheet,
-  Image,
   Text, 
   Dimensions,
   TouchableOpacity,
 } from 'react-native';
-import { useRouter } from "expo-router";
 const { width } = Dimensions.get('window');
 
 type Props = {
-  level: string;
-  imageSource: any;
+  title: string;
+  onPress: () => void;
+  bgColor?: string;
+  color?: string;
 };
 
-export default function CardLevelEdu({ level, imageSource}: Props) {
-  const router = useRouter();
+export default function CardSubContent({ title, onPress, bgColor, color }: Props) {
   return (
-    <View style={styles.card}>
-      <Image source={imageSource} style={styles.cardImage} resizeMode="contain" />
-      <Text style={styles.cardText}>{level}</Text>
-      <View style={styles.arrowContainer}>
-        <Text style={styles.arrowIcon}>{'>'}</Text>
-      </View>
-    </View>
-)};
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: bgColor }]}
+      onPress={onPress}
+    >
+      <Text style={[styles.cardText, { color }]}>{title}</Text>
+      <Text style={[styles.arrowIcon, { color }]}>{'>'}</Text>
+    </TouchableOpacity>
+  );
+}
+
 
 const CARD_WIDTH = Math.min(311, width - 40); 
 
 const styles = StyleSheet.create({
+    screen: {
+        flex: 1,
+        backgroundColor: '#27AE60',
+    },
+    container: {
+        flex: 1,
+    },
     card: {
         width: CARD_WIDTH,
-        height: 120, // Tinggi kartu agar sesuai dengan gambar
+        height: 70, // Tinggi kartu agar sesuai dengan gambar
         backgroundColor: 'white',
         borderRadius: 15,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         paddingHorizontal: 15,
-        marginVertical: 15, // Jarak antar kartu
+        marginVertical: 3, // Jarak antar kartu
         
         // Gaya bayangan kartu yang lebih halus
         shadowColor: '#000',
@@ -49,26 +56,13 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
         elevation: 3,
     },
-    cardImage: {
-        width: 100, // Lebar gambar
-        height: 100, // Tinggi gambar
-    },
     cardText: {
         fontSize: 30,
         fontWeight: 'bold',
         color: '#27AE60', // Warna teks hijau
         flex: 1, // Agar teks mengambil ruang dan mendorong panah ke kanan
-        textAlign: 'right',
+        textAlign: 'left',
         marginRight: 20,
-    },
-    arrowContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        borderColor: '#27AE60',
-        borderWidth: 2,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     arrowIcon: {
         fontSize: 20,
