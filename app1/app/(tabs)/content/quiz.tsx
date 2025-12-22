@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
@@ -10,78 +10,91 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import axios from 'axios';
+import { BASE_URL } from '../config/api';
+import { useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 
 const { width } = Dimensions.get('window');
 
-// NEW: Type untuk opsi jawaban
 interface Option {
   id: number;
   label: string;
-  color: string;
 }
 
 interface QuizItem {
   id: number;
   question: string;
+  correctOptionId: number; // ⬅️ tambahan
   options: Option[];
-  correctOptionId: number;
 }
 
-export default function TemplateScreen() {
+
+// NEW: Type untuk opsi jawaban
+
+export default function QuizScreen() {
   const router = useRouter();
+  const [quizData, setQuizData] = useState<QuizItem[]>([]);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
 
-  // ❗ Pindahkan quizData ke atas sebelum useState
-  const quizData: QuizItem[] = [
-    {
-      id: 1,
-      question: "Rumus keliling lingkaran adalah...",
-      options: [
-        { id: 1, label: "K=2×πr", color: "#3498DB" },
-        { id: 2, label: "K=π×d", color: "#E74C3C" },
-        { id: 3, label: "K=2πr", color: "#27AE60" },
-        { id: 4, label: "K=π×r×d", color: "#F1C40F" },
-      ],
-      correctOptionId: 3,
-    },
-    {
-      id: 2,
-      question: "Jari-jari 9 cm. Keliling lingkaran adalah...",
-      options: [
-        { id: 1, label: "50,25", color: "#3498DB" },
-        { id: 2, label: "56,52", color: "#E74C3C" },
-        { id: 3, label: "62,25", color: "#F39C12" },
-        { id: 4, label: "65,25", color: "#27AE60" },
-      ],
-      correctOptionId: 2,
-    },
-  ];
+  const { materiId, mapelId, levelId } = useLocalSearchParams<{ 
+    materiId: string,
+    mapelId: string,
+    levelId: string, 
+  }>();
 
-  // NEW: Jawaban per soal
-  const [selectedAnswers, setSelectedAnswers] = useState<(number | null)[]>(
-    Array(quizData.length).fill(null)
+  const submitQuiz = () => {
+    let score = 0;
+
+  quizData.forEach(q => {
+    if (selectedAnswers[q.id] === q.correctOptionId) {
+      score += 1;
+    }
+  });
+    
+  router.replace({
+    pathname: '/content/result',
+    params: {
+      correct: score,
+      total: quizData.length,
+      materiId,
+      mapelId,
+      levelId,
+    },
+  });
+  };
+  
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setSelectedAnswers({});
+      };
+    }, [])
   );
 
-  const chooseAnswer = (questionIndex: number, optionId: number) => {
-    const updated = [...selectedAnswers];
-    updated[questionIndex] = optionId;
-    setSelectedAnswers(updated);
+  useEffect(() => {
+    axios
+      .get(`${BASE_URL}/quiz`, {
+        params: { materiId },
+      })
+      .then(res => {
+        console.log('QUIZ API RESPONSE:', res.data);
+        setQuizData(res.data);
+        setSelectedAnswers({}); // reset saat ganti materi
+      });
+  }, [materiId]);
+
+  const chooseAnswer = (questionId: number, optionId: number) => {
+    setSelectedAnswers(prev => ({
+      ...prev,
+      [questionId]: optionId,
+    }));
   };
 
-  const checkAnswers = () => {
-    let count = 0;
 
-    quizData.forEach((q, index) => {
-      if (selectedAnswers[index] === q.correctOptionId) count++;
-    });
 
-    router.push({
-      pathname: "/content/result",
-      params: {
-        correct: count,
-        total: quizData.length,
-      },
-    });
-  };
+
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -90,7 +103,15 @@ export default function TemplateScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity 
-            onPress={() => router.push("/content/materi")} 
+            onPress={() => 
+              router.push({
+                pathname: '/content/sub_materi', // ✅ BENAR
+                params: {
+                  mapelId,
+                  levelId,
+                  materiId
+                },
+              })}
             style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={22} color="#fff" />
@@ -98,18 +119,22 @@ export default function TemplateScreen() {
           <Text style={styles.headerTitle}>Quiz</Text>
         </View>
 
-        <ScrollView 
-          contentContainerStyle={styles.quizContainer}
-          showsVerticalScrollIndicator={false}
+        <ScrollView
+          contentContainerStyle={{
+            padding: 20,
+            backgroundColor: '#27AE60',
+            flexGrow: 1,
+          }}
         >
-
           {quizData.map((q, index) => (
             <View key={q.id} style={styles.quizCard}>
-              <Text style={styles.question}>{`${index + 1}. ${q.question}`}</Text>
+              <Text style={styles.question}>
+                {`${index + 1}. ${q.question}`}
+              </Text>
 
               <View style={styles.row}>
                 {q.options.map(opt => {
-                  const isSelected = selectedAnswers[index] === opt.id;
+                  const isSelected = selectedAnswers[q.id] === opt.id;
 
                   return (
                     <TouchableOpacity
@@ -117,29 +142,29 @@ export default function TemplateScreen() {
                       style={[
                         styles.option,
                         {
-                          backgroundColor: opt.color,
-                          opacity: selectedAnswers[index] && !isSelected ? 0.4 : 1,
+                          backgroundColor: 
+                            selectedAnswers[q.id] && !isSelected ? '#c40101ff' : '#27AE60',
+                          // opacity:
+                          //   selectedAnswers[q.id] && !isSelected ? 0.4 : 1,
                         },
                       ]}
-                      onPress={() => chooseAnswer(index, opt.id)}
+                      onPress={() => chooseAnswer(q.id, opt.id)}
                     >
                       <Text style={styles.optionText}>{opt.label}</Text>
                     </TouchableOpacity>
                   );
                 })}
+
               </View>
             </View>
           ))}
 
-          <TouchableOpacity 
-            style={styles.nextBtn}
-            onPress={checkAnswers} 
-          >
-            <Text style={styles.nextText}>Lihat Hasil</Text>
-          </TouchableOpacity>
-
+          {quizData.length > 1 && (
+            <TouchableOpacity style={styles.nextBtn} onPress={submitQuiz}>
+              <Text style={styles.nextText}>Kirim Jawaban</Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
-
       </View>
     </SafeAreaView>
   );
@@ -147,77 +172,77 @@ export default function TemplateScreen() {
 
 const CARD_WIDTH = Math.min(311, width - 40);
 
-const styles = StyleSheet.create({
-    screen: {
-        flex: 1,
-        backgroundColor: '#27AE60',
-    },
-    container: {
-        flex: 1,
-    },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    marginBottom: 30,
-    width: '100%',
-  },
-  backButton: {
-    padding: 5,
-    marginRight: 20,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  quizContainer: {
-    padding: 20,
-    backgroundColor: "#27AE60",
-    flexGrow: 1,
-    alignItems: "center",
-  },
-  quizCard: {
-    backgroundColor: "white",
-    padding: 15,
-    borderRadius: 15,
-    width: "85%",
-    marginBottom: 20,
-  },
-  question: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
-    color: "#333",
-  },
-  row: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 10,
-  },
-  option: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    minWidth: 100,
-    alignItems: "center",
-  },
-  optionText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  nextBtn: {
-    marginTop: 30,
-    backgroundColor: "#2ECC71",
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: "center"
-  },
-  nextText: {
-    fontSize: 16,
-    color: "white",
-    fontWeight: "bold"
-  }
+const styles = StyleSheet.create({ 
+  screen: { 
+    flex: 1, 
+    backgroundColor: '#27AE60', 
+  }, 
+  container: { 
+    flex: 1, 
+  }, 
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 10, 
+    marginBottom: 30, 
+    width: '100%', 
+  }, 
+  backButton: { 
+    padding: 5, 
+    marginRight: 20, 
+  }, 
+  headerTitle: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    color: 'white', 
+  }, 
+  quizContainer: { 
+    padding: 20, 
+    backgroundColor: "#27AE60", 
+    flexGrow: 1, 
+    alignItems: "center", 
+  }, 
+  quizCard: { 
+    backgroundColor: "white", 
+    padding: 15, 
+    borderRadius: 15, 
+    width: "100%", 
+    marginBottom: 20, 
+  }, 
+  question: { 
+    fontSize: 18, 
+    fontWeight: "bold", 
+    marginBottom: 15, 
+    textAlign: "center", 
+    color: "#333", 
+  }, 
+  row: { 
+    flexDirection: "row", 
+    flexWrap: "wrap", 
+    justifyContent: "center", 
+    gap: 10, 
+  }, 
+  option: { 
+    paddingVertical: 10, 
+    paddingHorizontal: 15, 
+    borderRadius: 8, 
+    minWidth: 100, 
+    alignItems: "center", 
+  }, 
+  optionText: { 
+    color: "white", 
+    fontWeight: "bold", 
+  }, 
+  nextBtn: { 
+    marginTop: 30, 
+    backgroundColor: "#2ECC71", 
+    paddingVertical: 12, 
+    borderRadius: 10, 
+    alignItems: "center" 
+  }, 
+  nextText: { 
+    fontSize: 16, 
+    color: "white", 
+    fontWeight: "bold" 
+  } 
 });

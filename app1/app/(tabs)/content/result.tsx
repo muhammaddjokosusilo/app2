@@ -6,6 +6,8 @@ import {
   Dimensions,
   TouchableOpacity,
   Share,
+  Alert,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,49 +25,51 @@ interface UserData {
 export default function ResultScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  
+
   const correct = parseInt(params.correct as string) || 0;
   const total = parseInt(params.total as string) || 1;
   const materiId = params.materiId as string;
-  
+  const mapelId = params.mapelId as string;
+  const levelId = params.levelId as string;
+
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const score = (correct / total) * 100;
   const isPassed = score >= 70;
 
   useEffect(() => {
-    loadUserData();
+    const loadUser = async () => {
+      try {
+        const userStr = await AsyncStorage.getItem('user');
+        if (userStr) {
+          setUser(JSON.parse(userStr));
+        }
+      } catch (error) {
+        console.error('Error loading user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadUser();
   }, []);
 
-  const loadUserData = async () => {
-    try {
-      const userData = await AsyncStorage.getItem('userData');
-      if (userData) {
-        setUser(JSON.parse(userData));
-      }
-    } catch (error) {
-      console.error('Error loading user data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+//   const shareResult = async () => {
+//     try {
+//       const message = `🎯 Hasil Quiz Saya:
+// ✅ ${correct} dari ${total} benar
+// 📊 Score: ${score.toFixed(1)}%
+// ${isPassed ? '🎉 LULUS!' : '📚 Belajar lagi yuk!'}`;
 
-  const shareResult = async () => {
-    try {
-      const message = `🎯 Hasil Quiz Saya:\n✅ ${correct} dari ${total} benar\n📊 Score: ${score.toFixed(1)}%\n${isPassed ? '🎉 LULUS!' : '📚 Belajar lagi yuk!'}`;
-      
-      await Share.share({
-        message,
-        title: 'Hasil Quiz Saya',
-      });
-    } catch (error) {
-      console.error('Error sharing:', error);
-    }
-  };
+//       await Share.share({ message });
+//     } catch (error) {
+//       console.error('Error sharing:', error);
+//     }
+//   };
 
   const getScoreColor = () => {
-    if (score >= 80) return '#27AE60';
+    if (score >= 80) return '#ff0800ff';
     if (score >= 60) return '#F39C12';
     return '#E74C3C';
   };
@@ -77,6 +81,46 @@ export default function ResultScreen() {
     if (score >= 60) return 'Cukup Baik! 💪';
     return 'Belajar Lagi Yuk! 📚';
   };
+
+  const handleExit = () => {
+  // Untuk web
+  if (Platform.OS === 'web') {
+    const confirmExit = window.confirm('Apakah Anda yakin ingin keluar dari quiz?');
+    if (confirmExit) {
+      router.replace({
+        pathname: '/content/sub_materi',
+        params: { materiId, mapelId, levelId },
+      });
+    }
+  } 
+  // Untuk mobile (iOS/Android)
+  else {
+    // Anda bisa menggunakan Alert dari react-native jika mau
+    // Tapi lebih baik gunakan library cross-platform
+    import('react-native').then(({ Alert }) => {
+      Alert.alert(
+        'Keluar',
+        'Apakah Anda yakin ingin keluar dari quiz?',
+        [
+          {
+            text: 'Batal',
+            style: 'cancel',
+          },
+          {
+            text: 'Keluar',
+            onPress: () => {
+              router.replace({
+                pathname: '/content/sub_materi',
+                params: { materiId, mapelId, levelId },
+              });
+            },
+            style: 'destructive',
+          },
+        ]
+      );
+    });
+  }
+};
 
   if (loading) {
     return (
@@ -93,15 +137,22 @@ export default function ResultScreen() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
-            onPress={() => router.push("/content/materi")} 
+          <TouchableOpacity
             style={styles.backButton}
+            onPress={() =>
+              router.replace({
+                pathname: '/content/sub_materi',
+                params: { materiId, mapelId, levelId },
+              })
+            }
           >
             <Ionicons name="arrow-back" size={22} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Hasil Quiz</Text>
+          <View style={{ width: 40 }} /> {/* Spacer untuk penyeimbang */}
         </View>
 
+        {/* Content */}
         <View style={styles.content}>
           {/* Score Circle */}
           <View style={styles.scoreContainer}>
@@ -115,14 +166,27 @@ export default function ResultScreen() {
             </Text>
           </View>
 
+          {/* User Info */}
+          {user && (
+            <View style={styles.userInfo}>
+              <View style={styles.userIcon}>
+                <Ionicons name="person-circle" size={40} color="#FFFFFF" />
+              </View>
+              <View style={styles.userText}>
+                <Text style={styles.userName}>{user.name}</Text>
+                <Text style={styles.userEmail}>{user.email}</Text>
+              </View>
+            </View>
+          )}
+
           {/* Stats */}
-          <View style={styles.statsContainer}>
+          <View style={styles.stats}>
             <View style={styles.statItem}>
-              <View style={[styles.statIcon, { backgroundColor: '#2ECC71' }]}>
+              <View style={[styles.statIcon, { backgroundColor: '#27AE60' }]}>
                 <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
               </View>
               <Text style={styles.statValue}>{correct}</Text>
-              <Text style={styles.statLabel}>Jawaban Benar</Text>
+              <Text style={styles.statLabel}>Benar</Text>
             </View>
             
             <View style={styles.statItem}>
@@ -130,68 +194,69 @@ export default function ResultScreen() {
                 <Ionicons name="close-circle" size={24} color="#FFFFFF" />
               </View>
               <Text style={styles.statValue}>{total - correct}</Text>
-              <Text style={styles.statLabel}>Jawaban Salah</Text>
+              <Text style={styles.statLabel}>Salah</Text>
             </View>
             
             <View style={styles.statItem}>
               <View style={[styles.statIcon, { backgroundColor: '#3498DB' }]}>
-                <Ionicons name="list-circle" size={24} color="#FFFFFF" />
+                <Ionicons name="document-text" size={24} color="#FFFFFF" />
               </View>
               <Text style={styles.statValue}>{total}</Text>
-              <Text style={styles.statLabel}>Total Soal</Text>
+              <Text style={styles.statLabel}>Total</Text>
             </View>
           </View>
 
-          {/* User Info */}
-          {user && (
-            <View style={styles.userInfo}>
-              <Ionicons name="person-circle" size={40} color="#FFFFFF" />
-              <View style={styles.userText}>
-                <Text style={styles.userName}>{user.name || user.email}</Text>
-                <Text style={styles.userEmail}>{user.email}</Text>
-              </View>
-            </View>
-          )}
-
-          {/* Actions */}
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity 
+          {/* Action Buttons */}
+          <View style={styles.actions}>
+            <TouchableOpacity
               style={[styles.actionBtn, styles.retryBtn]}
-              onPress={() => router.push({
-                pathname: "/content/quiz",
-                params: { materiId }
-              })}
+              onPress={() =>
+                router.replace({
+                  pathname: '/content/quiz',
+                  params: { materiId, mapelId, levelId },
+                })
+              }
             >
               <Ionicons name="refresh" size={20} color="#27AE60" />
-              <Text style={[styles.actionText, { color: '#27AE60' }]}>
-                Coba Lagi
-              </Text>
+              <Text style={styles.actionText}>Coba Lagi</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity 
+            
+            {/* <TouchableOpacity
               style={[styles.actionBtn, styles.shareBtn]}
               onPress={shareResult}
             >
               <Ionicons name="share-social" size={20} color="#3498DB" />
-              <Text style={[styles.actionText, { color: '#3498DB' }]}>
-                Bagikan
-              </Text>
-            </TouchableOpacity>
+              <Text style={styles.actionText}>Bagikan</Text>
+            </TouchableOpacity> */}
           </View>
 
-          {/* Main Action */}
-          <TouchableOpacity 
-            style={[styles.mainActionBtn, !isPassed && { backgroundColor: '#E74C3C' }]}
-            onPress={() => router.push("/content/materi")}
+          {/* Main Action Button */}
+          <TouchableOpacity
+            style={styles.mainActionBtn}
+            onPress={() =>
+              router.replace({
+                pathname: isPassed ? '/content/sub_materi' : '/content/quiz',
+                params: { materiId, mapelId, levelId },
+              })
+            }
           >
             <Ionicons 
-              name={isPassed ? "checkmark-circle" : "arrow-redo"} 
-              size={22} 
+              name={isPassed ? "checkmark-circle" : "book"} 
+              size={24} 
               color="#FFFFFF" 
             />
             <Text style={styles.mainActionText}>
-              {isPassed ? 'Kembali ke Materi' : 'Pelajari Kembali'}
+              {isPassed ? 'Lanjutkan Belajar' : 'Pelajari Materi'}
             </Text>
+          </TouchableOpacity>
+
+          {/* Exit Button - Ditambahkan di bawah */}
+          <TouchableOpacity
+            style={styles.exitButton}
+            onPress={handleExit}
+          >
+            <Ionicons name="exit-outline" size={20} color="#E74C3C" />
+            <Text style={styles.exitText}>Keluar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -219,18 +284,20 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 15,
     paddingVertical: 15,
     width: '100%',
   },
   backButton: {
     padding: 5,
-    marginRight: 10,
+    width: 40,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
+    textAlign: 'center',
     flex: 1,
   },
   content: {
@@ -267,7 +334,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  statsContainer: {
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 15,
+    borderRadius: 10,
+    width: '100%',
+    marginBottom: 30,
+  },
+  userIcon: {
+    marginRight: 15,
+  },
+  userText: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    opacity: 0.8,
+  },
+  stats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
@@ -275,6 +367,7 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: 'center',
+    flex: 1,
   },
   statIcon: {
     width: 50,
@@ -294,30 +387,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     opacity: 0.9,
   },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 15,
-    borderRadius: 10,
-    width: '100%',
-    marginBottom: 30,
-  },
-  userText: {
-    marginLeft: 15,
-    flex: 1,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  userEmail: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.8,
-  },
-  actionsContainer: {
+  actions: {
     flexDirection: 'row',
     width: '100%',
     justifyContent: 'space-between',
@@ -326,13 +396,13 @@ const styles = StyleSheet.create({
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     flex: 1,
     marginHorizontal: 5,
-    justifyContent: 'center',
   },
   retryBtn: {
     borderWidth: 2,
@@ -356,11 +426,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     borderRadius: 10,
     width: '100%',
+    marginBottom: 20,
   },
   mainActionText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginLeft: 10,
+  },
+  // Exit Button Styles
+  exitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#E74C3C',
+    width: '100%',
+  },
+  exitText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#E74C3C',
+    marginLeft: 8,
   },
 });
