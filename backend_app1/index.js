@@ -232,17 +232,34 @@ app.get('/sub-materi', async (req, res) => {
     .from('nama_sub_materi')
     .select(`
       id,
-      nama_subMateri,
-      video_sub_materi (
-        video_subMateri
-      )
-    `)
+      nama_subMateri
+      `)
     .eq('materi_id', materiId);
 
   if (error) return res.status(500).json(error);
   res.json(data);
 });
 
+app.get('/materi/:materiId/video', async (req, res) => {
+  const { materiId } = req.params;
+
+  const { data, error } = await supabase
+    .from('materi')
+    .select(`
+      id,
+      id_video (
+        video_subMateri
+      )
+    `)
+    .eq('id', materiId)
+    .single();
+
+  if (error) return res.status(500).json(error);
+
+  res.json({
+    videoId: data?.video_materi?.[0]?.video_materi ?? null
+  });
+});
 
 
 app.get('/tingkat-pendidikan', async (req, res) => {
@@ -265,6 +282,128 @@ app.get('/tingkat-pendidikan', async (req, res) => {
 //   console.log('Server running on http://localhost:3000');
 // });
 
+// Tambahkan endpoint berikut di file backend Anda:
+
+// GET quiz berdasarkan materi_id
+app.get('/quiz', async (req, res) => {
+  try {
+    const { materiId } = req.query;
+
+    if (!materiId) {
+      return res.status(400).json({ error: 'materiId wajib diisi' });
+    }
+
+    // Ambil quiz berdasarkan materi_id
+    const { data: quizData, error: quizError } = await supabase
+      .from('quiz_question')
+      .select(`
+        id,
+        question,
+        quiz_option (
+          id,
+          label,
+          color,
+          is_correct
+        )
+      `)
+      .eq('materi_id', materiId);
+
+    if (quizError) throw quizError;
+
+    // Format data untuk frontend
+    const formattedQuiz = quizData.map((question, index) => ({
+      id: question.id || index + 1,
+      question: question.question,
+      options: question.quiz_option.map(option => ({
+        id: option.id,
+        label: option.label,
+        color: option.color || getDefaultColor(option.id),
+        isCorrect: option.is_correct
+      })),
+      correctOptionId: question.quiz_option.find(opt => opt.is_correct)?.id
+    }));
+
+    res.json(formattedQuiz);
+  } catch (error) {
+    console.error('Error fetching quiz:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Helper function untuk warna default
+function getDefaultColor(index) {
+  const colors = ["#3498DB", "#E74C3C", "#27AE60", "#F1C40F", "#9B59B6", "#E67E22"];
+  return colors[(index - 1) % colors.length];
+}
+
+// POST untuk menyimpan hasil quiz
+app.post('/quiz-result', async (req, res) => {
+  try {
+    const { userId, materiId, correct, total, answers } = req.body;
+
+    if (!userId || !materiId) {
+      return res.status(400).json({ error: 'userId dan materiId wajib diisi' });
+    }
+
+    const score = (correct / total) * 100;
+
+    const { data, error } = await supabase
+      .from('quick_results')
+      .insert([
+        {
+          user_id: userId,
+          materi_id: materiId,
+          correct: correct,
+          total: total,
+          score: score,
+          answers: answers, // array of {questionId, optionId}
+          created_at: new Date()
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data: data,
+      message: 'Hasil quiz berhasil disimpan'
+    });
+  } catch (error) {
+    console.error('Error saving quiz result:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET untuk melihat history quiz
+app.get('/quiz-history', async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId wajib diisi' });
+    }
+
+    const { data, error } = await supabase
+      .from('quick_results')
+      .select(`
+        *,
+        materi: materi_id (
+          nama_materi
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching quiz history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.listen(3000, '0.0.0.0', () => {
   console.log('Server running on port 3000');

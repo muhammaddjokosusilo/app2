@@ -158,7 +158,7 @@ export default function LoginScreen() {
 
                 {/* Register Section */}
                 <View style={styles.registerContainer}>
-                  <Text style={styles.registerText}>Don't have an account?</Text>
+                  <Text style={styles.registerText}>Dont have an account?</Text>
                   <TouchableOpacity
                     onPress={() => router.push('/auth/registerPage')}
                     disabled={loading}

@@ -20,19 +20,31 @@ export default function MateriPage() {
   }>();
 
   const [materi, setMateri] = useState<Materi[]>([]);
+  const { materiId } = useLocalSearchParams<{ materiId?: string }>();
+
+  console.log('materiId di halaman materi:', materiId);  // Tambahkan ini untuk debug
 
   useEffect(() => {
     axios.get(`${BASE_URL}/materi`, {
-      params: { mapelId, levelId }
+      params: { mapelId, levelId, materiId}
     }).then(res => setMateri(res.data));
-  }, [mapelId, levelId]);
+  }, [mapelId, levelId, materiId]);
 
   return (
       <SafeAreaView style={styles.screen}>
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/content/level', // ✅ BENAR
+                  params: {
+                    mapelId
+                  },
+                })
+              }
+            >
               <Ionicons name="arrow-back" size={22} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Materi</Text>
@@ -48,7 +60,11 @@ export default function MateriPage() {
                     onPress={() =>
                       router.push({
                         pathname: '/content/sub_materi',
-                        params: { materiId: item.id },
+                        params: { 
+                          mapelId,
+                          levelId,
+                          materiId: item.id 
+                        },
                       })
                     }
                   />

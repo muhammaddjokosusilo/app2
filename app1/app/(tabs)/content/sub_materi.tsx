@@ -19,13 +19,25 @@ import { Platform } from 'react-native';
 
 import CardSubContent from '../../component/cardSubMateri';
 
+// type SubMateri = {
+//   id: string;
+//   nama_subMateri: string;
+//   video_sub_materi?: {
+//     video_subMateri: string;
+//   };
+// };
+
 type SubMateri = {
   id: string;
   nama_subMateri: string;
-  video_sub_materi?: {
-    video_subMateri: string;
-  };
 };
+
+type VideoMateri = {
+  id: string;
+  id_video?: {
+    video_subMateri: string;
+  }
+}
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(311, width - 40);
@@ -33,8 +45,10 @@ const CARD_WIDTH = Math.min(311, width - 40);
 export default function LoginScreen() {
   // const { materiId } = useLocalSearchParams();
   const [subMateri, setSubMateri] = useState<SubMateri[]>([]);
+  const [videoMateri, setVideoMateri] = useState<VideoMateri[]>([]);
   const [videoId, setVideoId] = useState<string | null>(null);
-  const { materiId } = useLocalSearchParams<{ materiId: string }>();
+  const { mapelId, levelId } = useLocalSearchParams<{ mapelId: string, levelId: string }>();
+  const { materiId } = useLocalSearchParams<{ materiId: string}>();
 
   const router = useRouter()
 
@@ -47,20 +61,43 @@ export default function LoginScreen() {
       }
   }, []);
 
-  useEffect(() => {
-  axios
-    .get(`${BASE_URL}/sub-materi`, {
-      params: { materiId }
-    })
-    .then(res => {
-      setSubMateri(res.data);
+  // useEffect(() => {
+  //   axios
+  //     .get(`${BASE_URL}/sub-materi`, {
+  //       params: { materiId }
+  //     })
+  //     .then(res => {
+  //       setSubMateri(res.data);
 
-      // ambil video dari data pertama saja
-      if (res.data.length > 0) {
-        setVideoId(res.data[0]?.video_sub_materi?.video_subMateri || null);
-      }
+  //       // ambil video dari data pertama saja
+  //       if (res.data.length > 0) {
+  //         setVideoId(res.data[0]?.video_sub_materi?.video_subMateri || null);
+  //       }
+  //     });
+  // }, [materiId]);
+
+  useEffect(() => {
+    if (!materiId) return;
+
+    setVideoId(null); // reset AMAN di awal
+
+    axios.get(`${BASE_URL}/sub-materi`, {
+      params: { materiId }
+    }).then(res => {
+      setSubMateri(res.data);
     });
-}, []);
+  }, [materiId]);
+
+  useEffect(() => {
+    if (!materiId) return;
+
+    setVideoId(null);
+
+    axios.get(`${BASE_URL}/materi/${materiId}/video`)
+      .then(res => {
+        setVideoId(res.data.videoId);
+      });
+  }, [materiId]);
 
 
   return (
@@ -69,15 +106,26 @@ export default function LoginScreen() {
                 {/* Header dengan tombol kembali dan judul */}
               {/* Header dengan tombol kembali dan judul */}
               <View style={styles.header}>
-                  <TouchableOpacity onPress={() => router.push("/content/materi")} style={styles.backButton}>
-                  <Ionicons name="arrow-back" size={22} color="#fff" />
+                  <TouchableOpacity 
+                    onPress={() =>
+                      router.push({
+                        pathname: '/content/materi', // ✅ BENAR
+                        params: {
+                          mapelId,
+                          levelId,
+                        },
+                      })
+                    } 
+                    style={styles.backButton}
+                  >
+                    <Ionicons name="arrow-back" size={22} color="#fff" />
                   </TouchableOpacity>
                   <Text style={styles.headerTitle}>Sub Materi</Text>
               </View>
 
               <View style={styles.content}>  
                 <View style={{ marginHorizontal: 50 }}>
-                  {videoId && (
+                  {VideoMateri && (
                     <View style={{ marginHorizontal: 50 }}>
                       {Platform.OS === 'web' ? (
                         <iframe

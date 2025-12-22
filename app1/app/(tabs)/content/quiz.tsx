@@ -8,10 +8,10 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-const { width } = Dimensions.get('window');
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
+const { width } = Dimensions.get('window');
 
 // NEW: Type untuk opsi jawaban
 interface Option {

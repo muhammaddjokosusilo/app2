@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View,
+
   StyleSheet,
   Text, 
   Dimensions,
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     card: {
         width: CARD_WIDTH,
         height: 70, // Tinggi kartu agar sesuai dengan gambar
-        backgroundColor: 'white',
+        backgroundColor: '#FFFFFF',
         borderRadius: 15,
         flexDirection: 'row',
         alignItems: 'center',

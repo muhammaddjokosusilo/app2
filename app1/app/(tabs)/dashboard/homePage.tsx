@@ -8,7 +8,6 @@ import {
   Text,
   Dimensions,
   TouchableOpacity,
-  FlatList,
   Alert,
   ActivityIndicator,
   ScrollView
@@ -173,7 +172,7 @@ export default function DashboardScreen() {
           <View style={styles.headerCard}>
             <View style={styles.headerLeft}>
               <Text style={styles.greeting}>
-                Halo, {userData?.username || 'User'}!
+                Halo, {userData?.name || 'User'}!
               </Text>
               <View style={styles.searchBox}>
                 <TextInput
