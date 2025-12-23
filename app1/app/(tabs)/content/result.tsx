@@ -55,19 +55,6 @@ export default function ResultScreen() {
     loadUser();
   }, []);
 
-//   const shareResult = async () => {
-//     try {
-//       const message = `🎯 Hasil Quiz Saya:
-// ✅ ${correct} dari ${total} benar
-// 📊 Score: ${score.toFixed(1)}%
-// ${isPassed ? '🎉 LULUS!' : '📚 Belajar lagi yuk!'}`;
-
-//       await Share.share({ message });
-//     } catch (error) {
-//       console.error('Error sharing:', error);
-//     }
-//   };
-
   const getScoreColor = () => {
     if (score >= 80) return '#ff0800ff';
     if (score >= 60) return '#F39C12';
@@ -83,44 +70,25 @@ export default function ResultScreen() {
   };
 
   const handleExit = () => {
-  // Untuk web
-  if (Platform.OS === 'web') {
-    const confirmExit = window.confirm('Apakah Anda yakin ingin keluar dari quiz?');
-    if (confirmExit) {
-      router.replace({
-        pathname: '/content/sub_materi',
-        params: { materiId, mapelId, levelId },
-      });
-    }
-  } 
-  // Untuk mobile (iOS/Android)
-  else {
-    // Anda bisa menggunakan Alert dari react-native jika mau
-    // Tapi lebih baik gunakan library cross-platform
-    import('react-native').then(({ Alert }) => {
-      Alert.alert(
-        'Keluar',
-        'Apakah Anda yakin ingin keluar dari quiz?',
-        [
-          {
-            text: 'Batal',
-            style: 'cancel',
+    Alert.alert(
+      'Keluar',
+      'Apakah Anda yakin ingin keluar dari quiz?',
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Keluar',
+          style: 'destructive',
+          onPress: () => {
+            router.replace({
+              pathname: '/content/sub_materi',
+              params: { materiId, mapelId, levelId },
+            });
           },
-          {
-            text: 'Keluar',
-            onPress: () => {
-              router.replace({
-                pathname: '/content/sub_materi',
-                params: { materiId, mapelId, levelId },
-              });
-            },
-            style: 'destructive',
-          },
-        ]
-      );
-    });
-  }
-};
+        },
+      ]
+    );
+  };
+
 
   if (loading) {
     return (

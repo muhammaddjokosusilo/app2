@@ -15,7 +15,7 @@ type Props = {
   color?: string;
 };
 
-export default function CardSubContent({ title, onPress, bgColor, color }: Props) {
+export default function CardSubContent({ title, onPress, bgColor='#FFFFFF', color='#27AE60' }: Props) {
   return (
     <TouchableOpacity
       style={[styles.card, { backgroundColor: bgColor }]}

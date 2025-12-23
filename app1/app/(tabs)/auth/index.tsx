@@ -61,13 +61,24 @@ export default function LoginScreen() {
       let errorMessage = 'Terjadi kesalahan. Coba lagi.';
       
       if (axios.isAxiosError(err)) {
-        const axiosError = err as AxiosError<{ error?: string }>;
-        errorMessage = axiosError.response?.data?.error || axiosError.message || 'Network error';
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
+        const axiosError = err as AxiosError<{ error?: string; code?: string }>;
+
+        if (axiosError.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
+          Alert.alert(
+            'Email Belum Dikonfirmasi',
+            'Silakan cek email Anda dan klik link verifikasi terlebih dahulu.'
+          );
+          return;
+        }
+
+        Alert.alert(
+          'Login Gagal',
+          axiosError.response?.data?.error || 'Terjadi kesalahan'
+        );
+      } else {
+        Alert.alert('Login Gagal', 'Terjadi kesalahan');
       }
 
-      Alert.alert('Login Failed', errorMessage);
     } finally {
       setLoading(false);
     }

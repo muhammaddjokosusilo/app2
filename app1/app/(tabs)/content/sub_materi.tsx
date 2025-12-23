@@ -18,6 +18,7 @@ import { BASE_URL } from '../config/api';
 import { Platform } from 'react-native';
 
 import CardSubContent from '../../component/cardSubMateri';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 type SubMateri = {
@@ -66,8 +67,30 @@ export default function SubMateriScreens() {
           setVideoMateri(video);
         }
       });
-  }, [materiId]);
+      console.log('VIDEO ID:', videoMateri);
+  }, [materiId, videoMateri]);
 
+  const handleDownload = async () => {
+    try {
+      const userStr = await AsyncStorage.getItem('user');
+      const user = JSON.parse(userStr || '{}');
+
+      const res = await axios.post(`${BASE_URL}/library`, {
+        user_id: user.id,
+        mapel_id: mapelId,
+        level_id: levelId,
+        materi_id: materiId,
+      });
+
+      Alert.alert(
+        'Info',
+        res.data.message,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (err) {
+      Alert.alert('Error', 'Gagal menyimpan materi');
+    }
+  };
 
 
 
@@ -97,7 +120,7 @@ export default function SubMateriScreens() {
               <View style={styles.content}>
                 <View style={{ marginHorizontal: 50 }}>
                   {videoMateri && (
-                    <View style={{ marginHorizontal: 50 }}>
+                    <View style={styles.videoContainer}>
                       {Platform.OS === 'web' ? (
                         <iframe
                           width="100%"
@@ -109,13 +132,16 @@ export default function SubMateriScreens() {
                         />
                       ) : (
                         <YoutubePlayer
+                          width={'100%'}
                           height={200}
+                          play={playing}
                           videoId={videoMateri}
                           onChangeState={onStateChange}
                         />
                       )}
                     </View>
                   )}
+
 
                 </View>
 
@@ -127,23 +153,24 @@ export default function SubMateriScreens() {
                               title={item.nama_subMateri}
                               onPress={() =>
                                 router.push({
-                                  pathname: '/content/sub_materi',
-                                  params: { materiId: item.id },
+                                  pathname: '/content/isi_materi',
+                                  params: { 
+                                    mapelId,
+                                    levelId,
+                                    materiId,
+                                    subMateriId: item.id 
+                                  },
                                 })
-                              } 
+                              }
                             />
                         </View>
                     ))}
                     <View style={{ marginBottom: 20 }}>
                       <CardSubContent 
-                        title='Download'
-                        onPress={() => 
-                          router.push({
-                            pathname: '/content/quiz'
-                          })
-                        }
-                        bgColor='#27AE60'
-                        color='#FFFFFF'
+                          title="Download"
+                          onPress={handleDownload}
+                          bgColor="#27AE60"
+                          color="#FFFFFF"
                       />
                     </View>
                     <View style={{ marginBottom: 20 }}>
@@ -207,6 +234,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: 'white',
     },
+    videoContainer: {
+      width: '100%',
+      paddingHorizontal: 16,
+      marginBottom: 20,
+    },
+
     // Content
     content: {
       width: '100%',

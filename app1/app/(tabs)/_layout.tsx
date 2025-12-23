@@ -22,6 +22,13 @@ export default function TabLayout() {
                 tabBarIcon: ({ color }) => <Ionicons size={28} name="home" color={color} />,
             }} 
         />
+        <Tabs.Screen
+          name="library/index"
+          options={{
+            title: 'Library',
+            tabBarIcon: ({ color }) => <Ionicons size={28} name="book" color={color} />,
+          }}
+        />
 
        <Tabs.Screen name="auth/index" options={{href: null,}}/>
        <Tabs.Screen name="dahsboard/homePage" options={{href: null,}}/>
@@ -30,6 +37,10 @@ export default function TabLayout() {
        <Tabs.Screen name="content/level" options={{href: null,}}/>
        <Tabs.Screen name="content/materi" options={{href: null,}}/>
        <Tabs.Screen name="content/sub_materi" options={{href: null,}}/>
+       <Tabs.Screen name="content/quiz" options={{href: null,}}/>
+       <Tabs.Screen name="content/result" options={{href: null,}}/>
+       <Tabs.Screen name="content/isi_materi" options={{href: null,}}/>
+
        {/* <Tabs.Screen name="component/gridItem" options={{href: null}}/> */}
 
 

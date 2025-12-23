@@ -104,7 +104,14 @@ app.post('/login', async (req, res) => {
   });
 
   if (authError) {
-    return res.status(400).json({ error: authError.message });
+    return res.status(401).json({ error: authError.message });
+  }
+
+  if (!authData.user.email_confirmed_at) {
+    return res.status(403).json({
+      error: 'Email belum dikonfirmasi. Silakan cek email Anda.',
+      code: 'EMAIL_NOT_VERIFIED',
+    });
   }
 
   // 2. Ambil data tambahan (sekolah) dari tabel profiles
@@ -359,6 +366,119 @@ app.get('/quiz', async (req, res) => {
   }
 });
 
+app.get('/sub-materi/detail', async (req, res) => {
+  const { subMateriId } = req.query;
+
+  const { data, error } = await supabase
+    .from('isi_materi')
+    .select('id, materi_id, dokumen')
+    .eq('sub_materi_id', subMateriId)
+    .single();
+
+  if (error) {
+    return res.status(500).json({ message: error.message });
+  }
+
+  res.json(data);
+});
+
+app.post('/library', async (req, res) => {
+  const { user_id, mapel_id, level_id, materi_id } = req.body;
+
+  if (!user_id || !mapel_id || !level_id || !materi_id) {
+    return res.status(400).json({ message: 'Data tidak lengkap' });
+  }
+
+  // cek data sudah ada
+  const { data: existing } = await supabase
+    .from('library')
+    .select('id')
+    .eq('user_id', user_id)
+    .eq('mapel_id', mapel_id)
+    .eq('level_id', level_id)
+    .eq('materi_id', materi_id)
+    .single();
+
+  if (existing) {
+    return res.status(200).json({
+      status: 'exists',
+      message: 'Materi sudah tersimpan',
+    });
+  }
+
+  // insert baru
+  const { error } = await supabase
+    .from('library')
+    .insert([{ user_id, mapel_id, level_id, materi_id }]);
+
+  if (error) {
+    return res.status(500).json({ message: error.message });
+  }
+
+  res.json({
+    status: 'success',
+    message: 'Materi berhasil disimpan',
+  });
+});
+
+app.get('/library', async (req, res) => {
+  const { user_id } = req.query;
+
+  const { data, error } = await supabase
+    .from('library')
+    .select(`
+      id,
+      mapel_id,
+      level_id,
+      materi_id,
+      mata_pelajaran (nama_mapel),
+      materi (judul),
+      tingkat_pendidikan (nama_tingkat)
+    `)
+    .eq('user_id', user_id);
+
+  if (error) {
+    return res.status(500).json({ message: error.message });
+  }
+
+  res.json(data);
+});
+
+// app.get('/profile-page', async (req, res) => {
+//   const { user_id } = req.query;
+
+//   const { data, error } = await supabase
+//     .from('profiles')
+//     .select('id, email, nama, sekolah')
+//     .eq('id', user_id)
+//     .single();
+
+//   if (error) {
+//     return res.status(400).json({ message: error.message });
+//   }
+
+//   res.json(data);
+// });
+
+app.get('/profile-page', async (req, res) => {
+  const { user_id } = req.query;
+
+  if (!user_id) {
+    return res.status(400).json({ message: 'user_id wajib' });
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, email, name, sekolah, picture')
+    .eq('id', user_id)
+    .single();
+
+  if (error) {
+    return res.status(400).json({ message: error.message });
+  }
+
+  res.json(data);
+});
 
 
 
