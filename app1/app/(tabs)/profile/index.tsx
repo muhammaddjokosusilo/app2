@@ -8,23 +8,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/authContext';
 // import { router } from '.expo/types/router';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function ProfileScreen() {
     const { logout } = useAuth();
     const router = useRouter();
     const [profile, setProfile] = useState<any>(null);
 
-  useEffect(() => {
-    AsyncStorage.getItem('user').then(userStr => {
-      const user = JSON.parse(userStr || '{}');
+    useFocusEffect(
+        React.useCallback(() => {
+            AsyncStorage.getItem('user').then(userStr => {
+            const user = JSON.parse(userStr || '{}');
 
-      axios
-        .get(`${BASE_URL}/profile-page`, {
-          params: { user_id: user.id },
-        })
-        .then(res => setProfile(res.data));
-    });
-  }, []);
+            axios
+                .get(`${BASE_URL}/profile-page`, {
+                params: { user_id: user.id },
+                })
+                .then(res => setProfile(res.data));
+            });
+        }, [])
+    );
 
     const handleLogout = () => {
         Alert.alert(
@@ -79,7 +82,9 @@ export default function ProfileScreen() {
 
       {/* Action */}
       <View style={styles.card}>
-        <TouchableOpacity>
+        <TouchableOpacity
+            onPress={() => router.push("/(tabs)/setting")}
+        >
           <Text style={styles.action}>Pengaturan</Text>
         </TouchableOpacity>
 

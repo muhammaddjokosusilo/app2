@@ -480,6 +480,41 @@ app.get('/profile-page', async (req, res) => {
   res.json(data);
 });
 
+// UPDATE PROFILE
+app.put('/profile-update', async (req, res) => {
+  try {
+    const { user_id, name, email, sekolah, phone } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ message: 'user_id wajib' });
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        name,
+        email,
+        sekolah
+      })
+      .eq('id', user_id)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    res.json({
+      message: 'Profil berhasil diperbarui',
+      data,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
 
 
 // app.listen(3000, () => {

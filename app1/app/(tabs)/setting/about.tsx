@@ -23,7 +23,7 @@ export default function AboutAppScreen() {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity 
-                        onPress={() => router.back()} 
+                        onPress={() => router.push("/(tabs)/setting")} 
                         style={styles.backButton}
                     >
                         <Ionicons name="arrow-back" size={22} color="#fff" />

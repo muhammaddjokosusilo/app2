@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import axios from 'axios';
 import { useAuth } from '../context/authContext';
 import { BASE_URL } from '../config/api';
+import { useFocusEffect } from '@react-navigation/native';
 
 
 const { width } = Dimensions.get('window');
@@ -46,11 +47,19 @@ export default function DashboardScreen() {
   // Fetch data saat component mount
   useEffect(() => {
     if (user && token) {
-      fetchUserProfile();
+      // fetchUserProfile();
       fetchSubjects();
       fetchEvent();
     }
   }, [user, token]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (token) {
+        fetchUserProfile();
+      }
+    }, [token])
+  );
 
   // Fungsi untuk mengambil data profil user dari backend
   const fetchUserProfile = async () => {
@@ -264,7 +273,7 @@ export default function DashboardScreen() {
               <TouchableOpacity 
                 key={event.id}
                 style={styles.bannerCard}
-                onPress={() => router.push('/')}
+                onPress={() => router.push('/(tabs)/dashboard/homePage')}
               >
                 <Image 
                   source={{ uri: event.image_event }}

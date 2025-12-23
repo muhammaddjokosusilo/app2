@@ -29,6 +29,13 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => <Ionicons size={28} name="book" color={color} />,
           }}
         />
+        <Tabs.Screen
+          name="profile/index"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ color }) => <Ionicons size={28} name="person" color={color} />,
+          }}
+        />
 
        <Tabs.Screen name="auth/index" options={{href: null,}}/>
        <Tabs.Screen name="dahsboard/homePage" options={{href: null,}}/>
@@ -40,6 +47,9 @@ export default function TabLayout() {
        <Tabs.Screen name="content/quiz" options={{href: null,}}/>
        <Tabs.Screen name="content/result" options={{href: null,}}/>
        <Tabs.Screen name="content/isi_materi" options={{href: null,}}/>
+       <Tabs.Screen name="setting/index" options={{href: null,}}/>
+       <Tabs.Screen name="setting/about" options={{href: null,}}/>
+       <Tabs.Screen name="setting/ubahProfile" options={{href: null,}}/>
 
        {/* <Tabs.Screen name="component/gridItem" options={{href: null}}/> */}
 

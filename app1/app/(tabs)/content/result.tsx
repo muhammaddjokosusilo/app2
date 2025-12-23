@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { BASE_URL } from '../config/api';
 
 const { width } = Dimensions.get('window');
 
@@ -32,28 +34,37 @@ export default function ResultScreen() {
   const mapelId = params.mapelId as string;
   const levelId = params.levelId as string;
 
-  const [user, setUser] = useState<UserData | null>(null);
+  // const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const score = (correct / total) * 100;
   const isPassed = score >= 70;
 
+  const [user, setUser] = useState<any>(null);
+
   useEffect(() => {
-    const loadUser = async () => {
+    const fetchProfile = async () => {
       try {
-        const userStr = await AsyncStorage.getItem('user');
-        if (userStr) {
-          setUser(JSON.parse(userStr));
-        }
-      } catch (error) {
-        console.error('Error loading user:', error);
+        const token = await AsyncStorage.getItem('token');
+        if (!token) return;
+
+        const res = await axios.get(`${BASE_URL}/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setUser(res.data);
+      } catch (err) {
+        console.error('Fetch profile error:', err);
       } finally {
         setLoading(false);
       }
     };
-    
-    loadUser();
+
+    fetchProfile();
   }, []);
+
 
   const getScoreColor = () => {
     if (score >= 80) return '#ff0800ff';
@@ -142,7 +153,7 @@ export default function ResultScreen() {
               </View>
               <View style={styles.userText}>
                 <Text style={styles.userName}>{user.name}</Text>
-                <Text style={styles.userEmail}>{user.email}</Text>
+                <Text style={styles.userEmail}>{user.sekolah}</Text>
               </View>
             </View>
           )}
